@@ -10,5 +10,5 @@ services:
     host: containerapp
   api:
     project: ./src/api
-    language: python
+    language: rust
     host: containerapp

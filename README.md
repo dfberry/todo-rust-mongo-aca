@@ -2,7 +2,7 @@
 page_type: sample
 languages:
 - azdeveloper
-- python
+- rust
 - bicep
 - typescript
 - html

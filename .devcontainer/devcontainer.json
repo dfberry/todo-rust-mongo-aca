@@ -1,25 +1,17 @@
 {
-    "name": "Azure Developer CLI",
-    "image": "mcr.microsoft.com/devcontainers/python:3.10-bullseye",
+    "name": "Rust with MongoDB ACA",
+    "image": "mcr.microsoft.com/devcontainers/rust:latest",
     "features": {
-        "ghcr.io/devcontainers/features/docker-in-docker:2": {
-        },
-        "ghcr.io/devcontainers/features/node:1": {
-            "version": "18",
-            "nodeGypDependencies": false
-        },
-        "ghcr.io/azure/azure-dev/azd:latest": {}
+
+        "ghcr.io/azure/azure-dev/azd:latest": {},
+        "ghcr.io/devcontainers/features/node:1": {}
     },
+
     "customizations": {
         "vscode": {
             "extensions": [
-                "GitHub.vscode-github-actions",
-                "ms-azuretools.azure-dev",
-                "ms-azuretools.vscode-azurefunctions",
-                "ms-azuretools.vscode-bicep",
-                "ms-azuretools.vscode-docker",
-                "ms-python.python",
-                "ms-vscode.vscode-node-azure-pack"
+                "1YiB.rust-bundle",
+                "rust-lang.rust-analyzer"
             ]
         }
     },
@@ -28,8 +20,5 @@
         3100
     ],
     "postCreateCommand": "",
-    "remoteUser": "vscode",
-    "hostRequirements": {
-        "memory": "8gb"
-    }
+    "remoteUser": "vscode"
 }
