@@ -2,7 +2,7 @@
 use azure_data_cosmos::prelude::*;
 //use azure_core::Context;
 use serde::{Deserialize, Serialize};
-
+use futures::stream::StreamExt;
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "number" for this example to
 // work (you can create with this SDK too, check the examples folder for that task).
@@ -55,7 +55,7 @@ async fn main() -> azure_core::Result<()> {
 
     // Insert 10 documents
     println!("Inserting 10 documents...");
-    for i in 1..10 {
+    for i in 20..30 {
         // define the document.
         let document_to_insert = MySampleStruct {
             id: format!("{}", i),
@@ -73,6 +73,22 @@ async fn main() -> azure_core::Result<()> {
 
         println!("Document inserted!");
     }
+    println!("\nStreaming documents");
+    // Next, we stream list the documents.
+    // We limit the number of documents to 3 for each batch as a demonstration. In practice
+    // you will use a more sensible number (or accept the Azure default).
+    let mut stream = collection
+        .list_documents()
+        .max_item_count(3)
+        .into_stream::<MySampleStruct>();
+    while let Some(res) = stream.next().await {
+        let res = res?;
+        println!("Received {} documents in one batch!", res.documents.len());
+        res.documents
+            .iter()
+            .for_each(|doc| println!("Document: {doc:#?}"));
+    }
+
 
     Ok(())
 }

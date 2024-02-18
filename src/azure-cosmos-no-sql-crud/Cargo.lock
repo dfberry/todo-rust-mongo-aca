@@ -58,6 +58,7 @@ dependencies = [
  "azure_core",
  "azure_data_cosmos",
  "dotenv",
+ "futures",
  "serde",
  "tokio",
 ]
