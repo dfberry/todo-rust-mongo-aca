@@ -11,7 +11,9 @@
         "vscode": {
             "extensions": [
                 "1YiB.rust-bundle",
-                "rust-lang.rust-analyzer"
+                "rust-lang.rust-analyzer",
+                "jinxdash.prettier-rust",
+                "mongodb.mongodb-vscode"
             ]
         }
     },
