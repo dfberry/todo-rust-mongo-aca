@@ -10,6 +10,9 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "GitHub.vscode-github-actions",                
                 "1YiB.rust-bundle",
                 "rust-lang.rust-analyzer",
                 "jinxdash.prettier-rust",
@@ -18,8 +21,8 @@
         }
     },
     "forwardPorts": [
-        3000,
-        3100
+        4000,
+        4100
     ],
     "postCreateCommand": "",
     "remoteUser": "vscode"

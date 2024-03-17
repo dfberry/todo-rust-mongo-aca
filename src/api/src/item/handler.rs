@@ -34,7 +34,7 @@ pub async fn get_items_handler(
     let limit = opts.limit.unwrap_or(10) as i64;
     let page = opts.page.unwrap_or(1) as i64;
 
-    let collection: Collection<ItemDatabaseModel> = app_state.db.collection("TodoItem");
+    let collection: Collection<ItemDatabaseModel> = app_state.db.collection("RustItem");
 
     match database::fetch_items(&collection, &listId, limit, page).await {
         Ok(res) => {
@@ -77,7 +77,7 @@ pub async fn create_item_handler(
         body.dueDate.clone(),
 
     );
-    let collection = app_state.db.collection("TodoItem");
+    let collection = app_state.db.collection("RustItem");
 
     match database::create_item(&collection, &new_item).await {
         Ok(item) => {
@@ -111,7 +111,7 @@ pub async fn get_single_item_handler(
     State(app_state): State<Arc<AppState>>,
 ) -> Response {
 
-    let collection = app_state.db.collection("TodoItem");
+    let collection = app_state.db.collection("RustItem");
 
     match database::get_single_item(&collection, &listId, &id).await {
         Ok(res) => {
@@ -158,14 +158,14 @@ pub async fn edit_item_handler(
         body.listId.clone(),
         body.name.clone(),
         body.state.clone(),
-        body.description.clone(),
-        body.dueDate.clone(),
-        body.completedDate.clone(),
-        body.createdAt.clone(),
-        body.updatedAt.clone(),
+        body.description,
+        body.dueDate,
+        body.completedDate,
+        body.createdDate,
+        body.updatedDate,
     );
 
-    let collection = app_state.db.collection("TodoItem");
+    let collection = app_state.db.collection("RustItem");
 
     match database::edit_item(&collection, &listId, &id, &item)
         .await{
@@ -202,7 +202,7 @@ pub async fn delete_item_handler(
 
     println!("delete_item_handler: listId: {:?}, id: {:?} ", listId, id);;
 
-    let collection = app_state.db.collection("TodoItem");
+    let collection = app_state.db.collection("RustItem");
 
     match database::delete_item(&collection, &listId, &id)
         .await{

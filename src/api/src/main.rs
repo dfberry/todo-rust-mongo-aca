@@ -1,169 +1,99 @@
-//! Provides a RESTful web server managing some lists.
-//!
-//! API will be:
-//!
-//! - `GET /lists`: return a JSON list of lists.
-//! - `POST /lists`: create a new list.
-//! - `PATCH /lists/:id`: update a specific list.
-//! - `DELETE /lists/:id`: delete a specific list.
-//!
-//! Run with
-//!
-//! ```not_rust
-//! cargo run -p example-lists
-//! ```
 
-use axum::{
-    error_handling::HandleErrorLayer,
-    extract::{Path, Query, State},
-    http::StatusCode,
-    response::IntoResponse,
-    routing::{get, patch},
-    Json, Router,
+mod database;
+mod list;
+mod route;
+mod shared;
+mod item;
+
+use hyper::{Request, Response};
+use std::sync::Arc;
+use tower::{Service, ServiceExt};
+use tower_http::cors::CorsLayer;
+
+use axum::http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    HeaderValue, Method,
 };
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    sync::{Arc, RwLock},
-    time::Duration,
-};
-use tower::{BoxError, ServiceBuilder};
-use tower_http::trace::TraceLayer;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use uuid::Uuid;
+
+use mongodb::Database;
+
+use dotenv::dotenv;
+use route::create_router;
+
+pub struct AppState {
+    db: mongodb::Database,
+    app_host: String,
+}
+
+pub fn get_cors(env: &str) -> Vec<HeaderValue> {
+    let mut cors_origins: Vec<HeaderValue> = 
+        std::env::var("API_ALLOW_ORIGINS")
+            .unwrap_or_else(|_| "http://localhost:3000".to_string())
+            .split(',')
+            .filter_map(|s| HeaderValue::from_str(s).ok())
+            .collect::<Vec<_>>();
+
+    if env != "development" {
+        let azure_origins = [
+            "https://portal.azure.com",
+            "https://ms.portal.azure.com",
+        ];
+
+        let azure_origins: Vec<HeaderValue> = azure_origins.iter()
+            .filter_map(|s| HeaderValue::from_str(s).ok())
+            .collect();
+
+        cors_origins.extend(azure_origins);
+    }
+
+    cors_origins
+}
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().ok();
+    dotenv().ok();
 
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "example_lists=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // get PORT from env 
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8000".to_string());
+    let host_name: String = std::env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
+    let environment: String = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "production".to_string());
+  
+    let cors_origins: Vec<HeaderValue> = get_cors(&environment);
 
-    let db = Db::default();
-
-    // Compose the routes
-    let app = Router::new()
-        .route("/lists", get(lists_index).post(lists_create))
-        // Add middleware to all routes
-        .layer(
-            ServiceBuilder::new()
-                .layer(HandleErrorLayer::new(|error: BoxError| async move {
-                    if error.is::<tower::timeout::error::Elapsed>() {
-                        Ok(StatusCode::REQUEST_TIMEOUT)
-                    } else {
-                        Err((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            format!("Unhandled internal error: {error}"),
-                        ))
-                    }
-                }))
-                .timeout(Duration::from_secs(10))
-                .layer(TraceLayer::new_for_http())
-                .into_inner(),
-        )
-        .with_state(db);
-
-
-
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3100")
-        .await
-        .unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
-    tracing::debug!("route: lists");
-    axum::serve(listener, app).await.unwrap();
-}
-
-// The query parameters for lists index
-#[derive(Debug, Deserialize, Default)]
-pub struct Pagination {
-    pub offset: Option<usize>,
-    pub limit: Option<usize>,
-}
-
-async fn lists_index(
-    pagination: Option<Query<Pagination>>,
-    State(db): State<Db>,
-) -> impl IntoResponse {
-    let lists = db.read().unwrap();
-
-    let Query(pagination) = pagination.unwrap_or_default();
-
-    let lists = lists
-        .values()
-        .skip(pagination.offset.unwrap_or(0))
-        .take(pagination.limit.unwrap_or(usize::MAX))
-        .cloned()
-        .collect::<Vec<_>>();
-
-    Json(lists)
-}
-
-#[derive(Debug, Deserialize)]
-struct Createlist {
-    text: String,
-}
-
-async fn lists_create(State(db): State<Db>, Json(input): Json<Createlist>) -> impl IntoResponse {
-    let list = list {
-        id: Uuid::new_v4(),
-        text: input.text,
-        completed: false,
+    // Create a CorsLayer with the parsed origins
+    let cors = CorsLayer::new()
+        .allow_origin(cors_origins)
+        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT, Method::PATCH, Method::OPTIONS, Method::HEAD])
+        .allow_credentials(true)
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);        
+        
+    let db = match database::get_database().await {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Failed to get database: {}", e);
+            std::process::exit(1);
+        }
     };
 
-    db.write().unwrap().insert(list.id, list.clone());
+    let mut app = create_router(Arc::new(AppState { 
+        db: db.clone(),
+        // concatenate host and port 
+        app_host: host_name + ":" + &port,
+    }));
 
-    (StatusCode::CREATED, Json(list))
-}
+    app = app.layer(cors);
 
-#[derive(Debug, Deserialize)]
-struct Updatelist {
-    text: Option<String>,
-    completed: Option<bool>,
-}
+    println!("🚀 Server started successfully on port {}", port);
+    let listener = match tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await {
+        Ok(listener) => listener,
+        Err(e) => {
+            eprintln!("Failed to bind to address: {}", e);
+            std::process::exit(1);
+        }
+    };
 
-async fn lists_update(
-    Path(id): Path<Uuid>,
-    State(db): State<Db>,
-    Json(input): Json<Updatelist>,
-) -> Result<impl IntoResponse, StatusCode> {
-    let mut list = db
-        .read()
-        .unwrap()
-        .get(&id)
-        .cloned()
-        .ok_or(StatusCode::NOT_FOUND)?;
-
-    if let Some(text) = input.text {
-        list.text = text;
+    if let Err(e) = axum::serve(listener, app).await {
+        eprintln!("Server error: {}", e);
+        std::process::exit(1);
     }
-
-    if let Some(completed) = input.completed {
-        list.completed = completed;
-    }
-
-    db.write().unwrap().insert(list.id, list.clone());
-
-    Ok(Json(list))
-}
-
-async fn lists_delete(Path(id): Path<Uuid>, State(db): State<Db>) -> impl IntoResponse {
-    if db.write().unwrap().remove(&id).is_some() {
-        StatusCode::NO_CONTENT
-    } else {
-        StatusCode::NOT_FOUND
-    }
-}
-
-type Db = Arc<RwLock<HashMap<Uuid, list>>>;
-
-#[derive(Debug, Serialize, Clone)]
-struct list {
-    id: Uuid,
-    text: String,
-    completed: bool,
 }

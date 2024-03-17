@@ -28,12 +28,12 @@ impl ListDatabaseModel {
 
         }
     }
-    pub fn update(id: String, name: String, createdAt: String) -> Self {
+    pub fn update(id: String, name: String, createdDate: String) -> Self {
 
         println!("ListDatabaseModel::update - id: {:?}", id);
 
         // change string into DateTime
-        let createdDate = BsonDateTime::parse_rfc3339_str(&createdAt).unwrap();
+        let createdDate = BsonDateTime::parse_rfc3339_str(&createdDate).unwrap();
 
         Self {
             _id: ObjectId::from_str(&id).unwrap(),
@@ -52,8 +52,8 @@ impl ListDatabaseModel {
         let doc = doc! {
             "id": id,
             "name": self.name.clone(),
-            "createdAt": createdDate,
-            "updatedAt": updatedDate,
+            "createdDate": createdDate,
+            "updatedDate": updatedDate,
         };
 
         Bson::Document(doc)

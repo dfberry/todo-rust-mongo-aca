@@ -147,48 +147,7 @@ pub async fn create_item(
         }
     }
 /* 
-    fn doc_to_item(&self, item: &ItemModel) -> Result<ItemResponse> {
 
-        let dueDate = match item.dueDate {
-            Some(date) => Some(date),
-            None => None
-        };
-
-        let completedDate = match item.completedDate {
-            Some(date) => Some(date),
-            None => None
-        };
-
-        let item_response = ItemResponse {
-            id: item.id.to_hex(),
-            listId: item.listId.to_hex(),
-            name: item.name.to_owned(),
-            state: item.state.to_owned(),
-            description: item.description.to_owned(),
-            dueDate:  dueDate,
-            completedDate: completedDate
-        };
-
-        Ok(item_response)
-    }
-
-    fn create_item_document(
-        &self,
-        body: &CreateItemSchema
-    ) -> Result<bson::Document> {
-        let serialized_data = bson::to_bson(body).map_err(MongoSerializeBsonError)?;
-        let document = serialized_data.as_document().unwrap();
-
-        let datetime = Utc::now();
-
-        let mut doc_with_dates = doc! {
-            "createdAt": datetime,
-            "updatedAt": datetime
-        };
-        doc_with_dates.extend(document.clone());
-
-        Ok(doc_with_dates)
-    }
     // fn get_items_state_handler(&self,
     //     listid,
     //     state,

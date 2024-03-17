@@ -37,7 +37,7 @@ pub async fn get_lists_handler(
     let limit = opts.limit.unwrap_or(10) as i64;
     let page = opts.page.unwrap_or(1) as i64;
 
-    let collection: Collection<ListDatabaseModel> = app_state.db.collection("TodoList");
+    let collection: Collection<ListDatabaseModel> = app_state.db.collection("RustList");
     match database::fetch_lists(&collection, limit, page).await {
         Ok(res) => {
             let res: Vec<_> = res.iter().map(|x| x.read()).collect();
@@ -73,7 +73,7 @@ pub async fn get_single_list_handler(
 ) -> Response {
     let Query(opts) = opts.unwrap_or_default();
 
-    let collection: Collection<ListDatabaseModel> = app_state.db.collection("TodoList");
+    let collection: Collection<ListDatabaseModel> = app_state.db.collection("RustList");
     match database::fetch_single_list(&collection, &id).await {
         Ok(res) => {
 
@@ -111,7 +111,7 @@ pub async fn create_list_handler(
 
     let new_list = ListDatabaseModel::new(body.name.clone());
 
-    let collection = app_state.db.collection("TodoList");
+    let collection = app_state.db.collection("RustList");
     match database::create_list(&collection, &new_list).await {
         Ok(list) => {
 
@@ -154,12 +154,12 @@ pub async fn edit_list_handler(
     let list: ListDatabaseModel = ListDatabaseModel::update(
         id,
         body.name.clone(),
-        body.createdAt.clone()
+        body.createdDate.clone()
     );
 
     println!("list.id: {:?}", list._id.to_hex());
 
-    let collection = app_state.db.collection("TodoList");
+    let collection = app_state.db.collection("RustList");
 
     match database::edit_list(&collection, &list).await {
         Ok(list) => {
@@ -191,7 +191,7 @@ pub async fn delete_list_handler(
     Path(id): Path<String>,
     State(app_state): State<Arc<AppState>>,
 ) -> Response {
-    let collection = app_state.db.collection("TodoList");
+    let collection = app_state.db.collection("RustList");
 
     match database::delete_list(&collection, &id).await {
         Ok(a) => {
