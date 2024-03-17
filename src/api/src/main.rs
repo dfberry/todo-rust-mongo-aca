@@ -1,24 +1,17 @@
-
-mod database;
-mod list;
-mod route;
-mod shared;
 mod item;
+mod list;
+mod shared;
 
-use hyper::{Request, Response};
+use dotenv::dotenv;
 use std::sync::Arc;
-use tower::{Service, ServiceExt};
-use tower_http::cors::CorsLayer;
 
 use axum::http::{
     header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
     HeaderValue, Method,
 };
+use tower_http::cors::CorsLayer;
 
-use mongodb::Database;
-
-use dotenv::dotenv;
-use route::create_router;
+use crate::{shared::database, shared::route::create_router};
 
 pub struct AppState {
     db: mongodb::Database,
@@ -26,20 +19,17 @@ pub struct AppState {
 }
 
 pub fn get_cors(env: &str) -> Vec<HeaderValue> {
-    let mut cors_origins: Vec<HeaderValue> = 
-        std::env::var("API_ALLOW_ORIGINS")
-            .unwrap_or_else(|_| "http://localhost:3000".to_string())
-            .split(',')
-            .filter_map(|s| HeaderValue::from_str(s).ok())
-            .collect::<Vec<_>>();
+    let mut cors_origins: Vec<HeaderValue> = std::env::var("API_ALLOW_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .split(',')
+        .filter_map(|s| HeaderValue::from_str(s).ok())
+        .collect::<Vec<_>>();
 
     if env != "development" {
-        let azure_origins = [
-            "https://portal.azure.com",
-            "https://ms.portal.azure.com",
-        ];
+        let azure_origins = ["https://portal.azure.com", "https://ms.portal.azure.com"];
 
-        let azure_origins: Vec<HeaderValue> = azure_origins.iter()
+        let azure_origins: Vec<HeaderValue> = azure_origins
+            .iter()
             .filter_map(|s| HeaderValue::from_str(s).ok())
             .collect();
 
@@ -53,20 +43,29 @@ pub fn get_cors(env: &str) -> Vec<HeaderValue> {
 async fn main() {
     dotenv().ok();
 
-    // get PORT from env 
+    // get PORT from env
     let port = std::env::var("PORT").unwrap_or_else(|_| "8000".to_string());
     let host_name: String = std::env::var("HOST").unwrap_or_else(|_| "localhost".to_string());
-    let environment: String = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "production".to_string());
-  
+    let environment: String =
+        std::env::var("ENVIRONMENT").unwrap_or_else(|_| "production".to_string());
+
     let cors_origins: Vec<HeaderValue> = get_cors(&environment);
 
     // Create a CorsLayer with the parsed origins
     let cors = CorsLayer::new()
         .allow_origin(cors_origins)
-        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT, Method::PATCH, Method::OPTIONS, Method::HEAD])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::DELETE,
+            Method::PUT,
+            Method::PATCH,
+            Method::OPTIONS,
+            Method::HEAD,
+        ])
         .allow_credentials(true)
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);        
-        
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE]);
+
     let db = match database::get_database().await {
         Ok(db) => db,
         Err(e) => {
@@ -75,9 +74,9 @@ async fn main() {
         }
     };
 
-    let mut app = create_router(Arc::new(AppState { 
+    let mut app = create_router(Arc::new(AppState {
         db: db.clone(),
-        // concatenate host and port 
+        // concatenate host and port
         app_host: host_name + ":" + &port,
     }));
 

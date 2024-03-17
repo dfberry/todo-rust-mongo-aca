@@ -1,11 +1,9 @@
-use mongodb::bson::doc;
-use mongodb::bson::DateTime;
-use mongodb::bson::{self, oid::ObjectId};
+use std::str::FromStr;
+
+use bson::{Bson, DateTime as BsonDateTime};
+use mongodb::bson::{self, doc, oid::ObjectId, DateTime};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-use bson::Bson;
-use bson::DateTime as BsonDateTime;
-use std::str::FromStr;
 
 #[allow(non_snake_case)]
 #[serde_as]
@@ -15,8 +13,8 @@ pub struct ListDatabaseModel {
     pub name: String,
     pub createdDate: DateTime,
     pub updatedDate: DateTime,
-
 }
+#[allow(non_snake_case)]
 impl ListDatabaseModel {
     pub fn new(name: String) -> Self {
         let now = bson::DateTime::now();
@@ -25,11 +23,9 @@ impl ListDatabaseModel {
             name: name,
             createdDate: now,
             updatedDate: now,
-
         }
     }
     pub fn update(id: String, name: String, createdDate: String) -> Self {
-
         println!("ListDatabaseModel::update - id: {:?}", id);
 
         // change string into DateTime
@@ -43,7 +39,6 @@ impl ListDatabaseModel {
         }
     }
     pub fn read(&self) -> Bson {
-        // convert _id from ObjectId to string
         let id = self._id.to_hex();
 
         let createdDate = self.createdDate.try_to_rfc3339_string().unwrap();

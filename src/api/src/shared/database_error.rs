@@ -1,6 +1,6 @@
 use serde::Serialize;
-use std::fmt;
 
+#[allow(non_snake_case)]
 #[derive(thiserror::Error, Debug)]
 pub enum MyDBError {
     #[error("MongoDB error")]

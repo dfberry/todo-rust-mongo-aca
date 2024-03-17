@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{delete, get, patch, post},
+    routing::{get, post},
     Router,
 };
 
@@ -17,7 +17,6 @@ use crate::{
 };
 
 use crate::AppState;
-use tower::layer::Layer;
 use tower::ServiceBuilder;
 use tower_http::{
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -39,7 +38,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
                             .level(Level::INFO)
                             .latency_unit(LatencyUnit::Micros),
                     ),
-            ), 
+            ),
         )
 }
 
