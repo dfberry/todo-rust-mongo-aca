@@ -8,6 +8,7 @@ use bson::DateTime as BsonDateTime;
 use std::str::FromStr;
 
 #[allow(non_snake_case)]
+#[derive(PartialEq)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TodoItemState {
     #[serde(rename = "todo")]
@@ -25,15 +26,15 @@ impl TodoItemState {
             TodoItemState::Done => "done",
         }
     }
-    pub fn from_string(s: &str) -> Option<Self> {
+    pub fn from_string(s: &str) -> Self {
 
         println!("state from_string: {:?}", s);
 
         match s {
-            "todo" => Some(TodoItemState::Todo),
-            "inprogress" => Some(TodoItemState::InProgress),
-            "done" => Some(TodoItemState::Done),
-            _ => Some(TodoItemState::Todo),
+            "todo" => TodoItemState::Todo,
+            "inprogress" => TodoItemState::InProgress,
+            "done" => TodoItemState::Done,
+            _ => TodoItemState::Todo,
         }
     }
 }
@@ -44,11 +45,11 @@ pub struct ItemDatabaseModel {
     pub _id: ObjectId,
     pub listId: ObjectId,
     pub name: String,
-    pub state: Option<TodoItemState>,
+    pub state: TodoItemState,
     pub description: Option<String>,
     pub dueDate: Option<DateTime>,
     pub completedDate: Option<DateTime>,
-    pub createdDate: DateTime,
+    pub createdDate: Option<DateTime>,
     pub updatedDate: Option<DateTime>,
 }
 impl ItemDatabaseModel {
@@ -86,7 +87,7 @@ impl ItemDatabaseModel {
             description: description,
             dueDate: due_date,
             completedDate: None,
-            createdDate: now,
+            createdDate: Some(now),
             updatedDate: None,
 
         }
@@ -103,29 +104,39 @@ impl ItemDatabaseModel {
         updatedDate: Option<String>
     ) -> Self {
         let now = bson::DateTime::now();
+
         let due_date = match dueDate {
             Some(s) => ItemDatabaseModel::string_to_optional_datetime2(&s),
             None => None
         };
-        let completed_date = match completedDate {
+
+        let created_date = match createdDate {
             Some(s) => ItemDatabaseModel::string_to_optional_datetime2(&s),
             None => None
         };
-        let created_date = ItemDatabaseModel::string_to_datetime(&createdDate);
 
         let state = state.to_lowercase();
         let state_enum = TodoItemState::from_string(&state);
+        let completed_date = if state_enum == TodoItemState::Done {
+            Some(now)
+        } else {
+            match completedDate {
+                Some(s) => ItemDatabaseModel::string_to_optional_datetime2(&s),
+                None => None
+            }
+        };
+
 
         Self {
             _id: ObjectId::from_str(&id).unwrap(),
             listId: ObjectId::from_str(&listId).unwrap(),
             name: name,
             state: state_enum,
-            description: Some(description),
-            dueDate: Some(due_date),
-            completedDate: Some(completed_date),
-            createdDate: Some(created_date),
-            updatedDate: now,
+            description: description,
+            dueDate: due_date,
+            completedDate: completed_date,
+            createdDate: created_date,
+            updatedDate: Some(now),
         }
     }
     pub fn read(&self) -> Bson {
@@ -134,7 +145,7 @@ impl ItemDatabaseModel {
         let list_id = self.listId.to_hex();
         let name = self.name.clone();
 
-        let state_obj: TodoItemState = self.state.clone().unwrap();
+        let state_obj: TodoItemState = self.state.clone();
         let state = TodoItemState::to_str(&state_obj);
 
         let description = self.description.clone();
@@ -142,9 +153,8 @@ impl ItemDatabaseModel {
         let due_date = self.dueDate.map(|date| date.try_to_rfc3339_string().unwrap());
         let completed_date = self.completedDate.map(|date| date.try_to_rfc3339_string().unwrap());
         let updated_date = self.updatedDate.map(|date| date.try_to_rfc3339_string().unwrap());
-    
-        let created_date = self.createdDate.try_to_rfc3339_string().unwrap();
-    
+        let created_date = self.createdDate.map(|date| date.try_to_rfc3339_string().unwrap()); 
+
         let doc = doc! {
             "id": id,
             "listId": list_id,

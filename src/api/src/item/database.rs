@@ -11,6 +11,7 @@ use mongodb::{bson, options::ClientOptions, Client, Collection, IndexModel};
 use std::str::FromStr;
 use crate::shared::database_error::MyDBError;
 use crate::item::database_model::ItemDatabaseModel;
+use crate::item::database_model::TodoItemState;
 
 pub async fn fetch_items(
     collection: &Collection<ItemDatabaseModel>,
@@ -101,13 +102,24 @@ pub async fn create_item(
         collection: &Collection<ItemDatabaseModel>, 
         listId: &String,
         id: &String, 
-        item: &ItemDatabaseModel
+        item: &mut ItemDatabaseModel
     ) -> Result<ItemDatabaseModel, Box<dyn Error>> {
         let id_as_object = ObjectId::from_str(id).map_err(|_| NotFoundError(id.to_string()))?;
         let listId_as_object = ObjectId::from_str(listId).map_err(|_| NotFoundError(listId.clone()))?;
-       
+
+        if(item.state == TodoItemState::Done && item.completedDate.is_none()) {
+            let now = bson::DateTime::now();
+            item.completedDate = Some(now);
+        }
+
+        // TBD: fix this - shouldn't have to remove createdDate from incoming doc
+        let mut update_doc = bson::to_document(item).unwrap();
+        update_doc.remove("createdDate");
+
+    
+
+
         let filter = doc! { "_id": id_as_object, "listId": listId_as_object};
-        let update_doc = bson::to_document(item).unwrap();
         let update = doc! { "$set": update_doc};
 
         let options = FindOneAndUpdateOptions::builder()

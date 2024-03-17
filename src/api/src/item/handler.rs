@@ -153,7 +153,7 @@ pub async fn edit_item_handler(
     println!("id: {:?}", id.clone());
     println!("body.id: {:?}", body.id.clone());
 
-    let item: ItemDatabaseModel = ItemDatabaseModel::update(
+    let mut item: ItemDatabaseModel = ItemDatabaseModel::update(
         id.clone(),
         body.listId.clone(),
         body.name.clone(),
@@ -167,7 +167,7 @@ pub async fn edit_item_handler(
 
     let collection = app_state.db.collection("RustItem");
 
-    match database::edit_item(&collection, &listId, &id, &item)
+    match database::edit_item(&collection, &listId, &id, &mut item)
         .await{
             Ok(item) => {
                 let json_list = item.to_response_body();

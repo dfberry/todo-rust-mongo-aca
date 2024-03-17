@@ -14,29 +14,6 @@
                 "webpack:///src/*": "${webRoot}/*"
             },
         },
-
-        {
-            "name": "Debug API",
-            "type": "python",
-            "request": "launch",
-            "module": "uvicorn",
-            "cwd": "${workspaceFolder}/src/api",
-            "args": [
-                "todo.app:app",
-                "--port", "4100",
-                "--reload"
-            ],
-            "justMyCode": true,
-            "python": "${workspaceFolder}/src/api/api_env/bin/python3",
-            "envFile": "${input:dotEnvFilePath}",
-            "windows": {
-                "python": "${workspaceFolder}/src/api/api_env/scripts/python.exe",
-            },
-            "preLaunchTask": "Restore API",
-            "env": {
-                "API_ENVIRONMENT":"develop"
-            }
-        }
     ],
 
     "inputs": [

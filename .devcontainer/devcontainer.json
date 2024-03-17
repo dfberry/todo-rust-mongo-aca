@@ -1,6 +1,6 @@
 {
     "name": "Rust with MongoDB ACA",
-    "image": "mcr.microsoft.com/devcontainers/rust:latest",
+    "image": "mcr.microsoft.com/devcontainers/rust:1-1-bullseye",
     "features": {
 
         "ghcr.io/azure/azure-dev/azd:latest": {},
@@ -10,13 +10,9 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "dbaeumer.vscode-eslint",
-                "esbenp.prettier-vscode",
-                "GitHub.vscode-github-actions",                
-                "1YiB.rust-bundle",
-                "rust-lang.rust-analyzer",
-                "jinxdash.prettier-rust",
-                "mongodb.mongodb-vscode"
+				"jinxdash.prettier-rust",
+				"mkloubert.vscode-http-client",
+				"mongodb.mongodb-vscode"
             ]
         }
     },
