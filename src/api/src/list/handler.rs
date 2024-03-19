@@ -63,7 +63,7 @@ pub async fn get_single_list_handler(
     Path(id): Path<String>,
     opts: Option<Query<FilterOptions>>,
 ) -> Response {
-    let Query(opts) = opts.unwrap_or_default();
+    let Query(_) = opts.unwrap_or_default();
 
     let collection: Collection<ListDatabaseModel> = app_state.db.collection("RustList");
     match database::fetch_single_list(&collection, &id).await {
@@ -173,7 +173,7 @@ pub async fn delete_list_handler(
     let collection = app_state.db.collection("RustList");
 
     match database::delete_list(&collection, &id).await {
-        Ok(a) => Response::builder()
+        Ok(_) => Response::builder()
             .header(http::header::CONTENT_TYPE, "application/json")
             .status(StatusCode::NO_CONTENT)
             .body(Body::empty())

@@ -54,10 +54,10 @@ impl ItemDatabaseModel {
             Err(_) => None,
         }
     }
-    pub fn string_to_datetime(s: &String) -> BsonDateTime {
-        let new_object = BsonDateTime::parse_rfc3339_str(s).unwrap();
-        return new_object;
-    }
+    // pub fn string_to_datetime(s: &String) -> BsonDateTime {
+    //     let new_object = BsonDateTime::parse_rfc3339_str(s).unwrap();
+    //     return new_object;
+    // }
     #[allow(non_snake_case)]
     pub fn new(
         listId: String,
